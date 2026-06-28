@@ -46,12 +46,13 @@ jobs:
       - name: Ensure gradle wrapper jar is present
         run: |
           if [ ! -f gradle/wrapper/gradle-wrapper.jar ]; then
-            echo "gradle-wrapper.jar missing — downloading..."
-            mkdir -p gradle/wrapper
+            echo "gradle-wrapper.jar missing — installing Gradle 8.7 binary distribution..."
             wget -q https://services.gradle.org/distributions/gradle-8.7-bin.zip -O /tmp/gradle.zip
-            unzip -q -o /tmp/gradle.zip gradle-8.7/lib/gradle-wrapper.jar -d /tmp
-            cp /tmp/gradle-8.7/lib/gradle-wrapper.jar gradle/wrapper/
-            echo "gradle-wrapper.jar installed"
+            unzip -q /tmp/gradle.zip -d /tmp/gradle-install
+            export PATH="/tmp/gradle-install/gradle-8.7/bin:$PATH"
+            gradle wrapper --gradle-version 8.7
+            chmod +x gradlew
+            echo "gradle-wrapper.jar regenerated successfully"
           fi
           ls -lh gradle/wrapper/gradle-wrapper.jar
 
