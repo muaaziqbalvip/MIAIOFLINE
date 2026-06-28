@@ -49,8 +49,25 @@ jobs:
             echo "gradle-wrapper.jar missing — installing Gradle 8.7 binary distribution..."
             wget -q https://services.gradle.org/distributions/gradle-8.7-bin.zip -O /tmp/gradle.zip
             unzip -q /tmp/gradle.zip -d /tmp/gradle-install
-            export PATH="/tmp/gradle-install/gradle-8.7/bin:$PATH"
-            gradle wrapper --gradle-version 8.7
+
+            # Run 'gradle wrapper' in an isolated empty directory, NOT in this
+            # project's root. If run inside the project root, Gradle first tries
+            # to configure :app (which resolves the Android plugin) before it
+            # generates the wrapper jar — that configuration step is what was
+            # failing. An empty directory has no build.gradle.kts, so Gradle
+            # just runs the 'wrapper' task directly with nothing to configure.
+            mkdir -p /tmp/wrapper-gen
+            cd /tmp/wrapper-gen
+            /tmp/gradle-install/gradle-8.7/bin/gradle wrapper --gradle-version 8.7 --no-daemon
+            cd "$GITHUB_WORKSPACE"
+
+            if [ ! -f /tmp/wrapper-gen/gradle/wrapper/gradle-wrapper.jar ]; then
+              echo "ERROR: wrapper generation failed — jar not found in isolated dir"
+              exit 1
+            fi
+
+            mkdir -p gradle/wrapper
+            cp /tmp/wrapper-gen/gradle/wrapper/gradle-wrapper.jar gradle/wrapper/gradle-wrapper.jar
             chmod +x gradlew
             echo "gradle-wrapper.jar regenerated successfully"
           fi
