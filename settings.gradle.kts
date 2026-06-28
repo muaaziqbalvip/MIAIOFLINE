@@ -1,8 +1,8 @@
 pluginManagement {
     repositories {
-        google()
-        mavenCentral()
-        gradlePluginPortal()
+        google()               // Android AGP plugins must resolve from google() first
+        gradlePluginPortal()   // Then Gradle core and Kotlin plugins
+        mavenCentral()         // Finally Maven Central as fallback
     }
 }
 dependencyResolutionManagement {
