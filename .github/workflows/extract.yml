@@ -1,4 +1,4 @@
-name: Extract Inner Folder to Root
+name: Extract ZIP to Root
 
 on:
   workflow_dispatch:
@@ -11,11 +11,22 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-      - name: Extract inner folder to root
+      - name: Install unzip
+        run: sudo apt-get update && sudo apt-get install -y unzip
+
+      - name: Extract Project
         run: |
-          unzip -q *.zip -d temp
+          ZIP_FILE=$(find . -maxdepth 1 -name "*.zip" | head -n 1)
+
+          if [ -z "$ZIP_FILE" ]; then
+            echo "No ZIP file found!"
+            exit 1
+          fi
+
+          unzip -q "$ZIP_FILE" -d temp
 
           INNER_DIR=$(find temp -mindepth 1 -maxdepth 1 -type d | head -n 1)
 
@@ -24,18 +35,25 @@ jobs:
             exit 1
           fi
 
-          cp -R "$INNER_DIR"/. .
+          # Remove GitHub workflows
+          rm -rf "$INNER_DIR/.github"
+
+          # Copy all files to repository root
+          cp -a "$INNER_DIR"/. .
+
+          # Cleanup
           rm -rf temp
           rm -f *.zip
 
-      - name: Commit
+      - name: Commit Changes
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add .
-          git commit -m "Extract project files" || echo "Nothing to commit"
 
-      - name: Push
+          git add .
+          git commit -m "Extract ZIP to root" || echo "Nothing to commit"
+
+      - name: Push Changes
         uses: ad-m/github-push-action@master
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
